@@ -79,7 +79,7 @@ In this work we explore the possibilities of a general algorithm for QPCA that u
 This subject was first introduced by \cite{Lloyd_2014}, where a self-tomography method is proposed that, given multiple copies of a quantum state with density matrix $\rho$, produces a state dominated by the principal components of $\rho$.
 ~\cite{martin2019pricing} base on this and propose a modified implementation which can be applied to a generic covariance matrix when it's not provided in quantum form, as it works through iterations starting from a random state. They apply it to a practical scenario in finance, and show that for small instances it is possible to reconstruct the first principal component from a set of data.
 Here we further investigate in the direction of an iterative protocol that can identify multiple dominant eigenvalues and eigenvectors. 
-We consider the case in which the solution is to be decoded into classical form, and describe a method that through measurements allows to obtain the sought after state encoding the principal subspace when starting from a random mixed state.
+We consider the case in which the solution is to be decoded into classical form, and describe a method that through consecutive measurements allows to obtain the sought after state encoding the principal subspace when starting from a random mixed state.
 We provide Qiskit code for this implementation that can be executed on IBM's real quantum computers, and we test said implementation on the simulator and on a real quantum device to see how it behaves and what problems can arise in practice.
 
 The rest of this paper is structured as follows: Section~\ref{sec:rw} surveys related works; Section~\ref{sec:pre} presents preliminaries for the work; Section~\ref{sec:impl} explains ...
@@ -89,11 +89,20 @@ The rest of this paper is structured as follows: Section~\ref{sec:rw} surveys re
 \section{Related Works}
 \label{sec:rw}
 \todo[inline]{here add a few similar works that tried to do something close to what you have done.}
-arxiv.org/pdf/1810.10710.pdf, use Lloyd's qpca method to map a set of data points stored in quantum form directly in the lower dimensional principal subspace.
+Since its original proposal, the topic of performing PCA using a quantum algorithm has been tackled several times.
+In addition to \cite{martin2019pricing}, whose method most resembles our own, different approaches have been devised.
 
-arxiv.org/pdf/1512.02109.pdf, propose a variant to Lloyd's qpca that starts from an initial superposition state and uses amplitude amplification to boost the desired eigenvalues. Number of iterations of the amplitude amplification is critical as can lead to reduce the probability of the desired eigenvalues instead.
+\cite{Daskin_2016} propose a variant of the QPCA algorithm that also works in principle with random initial states, although they specifically use the equal superposition in the computational basis, and applies amplitude amplification to mark and increase the amplitude of eigenvalues lying in a pre-defined range.
+% propose a variant of the QPCA algorithm that uses as initial state the equal superposition in the computational basis, although it could in principle use any random superposition%
+In this way, a linear combination of the eigenvectors associated to the desired largest eigenvalues can be obtained, encoded in the output state.
+However as the authors explain, in order for this method to succeed, some way must be found to estimate the right number of applications of the amplitude amplification routine, as this oscillates the success probability.
 
-arxiv.org/pdf/1811.00414.pdf, discuss a quantum-inspired classical algorithm model and use it to de-quantize Lloyd's qpca algorithm.
+\cite{yu2018quantum}, on the other hand, get around the problem of extracting a classical description of the solution by performing directly the mapping of a dataset into the low-dimensional space. 
+In their algorithm, they assume to have quantum access to the dataset stored in a QRAM and apply QPCA to produce a state encoding the compressed data.
+This approach has in a sense a much larger scope, but we focus instead on the estimation of the principal subspace of a covariance matrix that could be given in different forms (depending on how the unitaries are constructed, as discussed later).
+
+%Lloyd et al's QPCA has also been studied among other Quantum ML algorithms to produce their dequantized counterparts, i.e., quantum-inspired classical algorithms.  
+%\cite{tang2019quantuminspired} describe an algorithm model based on the \textit{sample and query access} assumption, and use it to dequantize QPCA with a polynomial slowdown.
 
 \section{Preliminaries}
 \label{sec:pre}
@@ -147,7 +156,7 @@ Another crucial part of the algorithm is the implementation of unitary  $U=e^{iX
 % \todo[inline]{the two paragraphs below might make more sense if placed in the related works section.}
 
 A method for the exponentiation of non-sparse $d$-dimensional Hamiltonians in time $\mathcal{O}(\log{d})$ is also proposed in \cite{Lloyd_2014}, and compares to methods based on the higher order Suzuki-Trotter expansion that take $\mathcal{O}(d\log{d})$. However, this technique requires once again that many copies of quantum state $X$ are given, and is most effective when some of the eigenvalues of $X$ are large. It was proven that this method is optimal in terms of sample complexity \cite{Kimmel_2017}, meaning it shows the best bound on the approximation error for a given number of copies of $X$.\\
-Other methods using different and more convenient input models have been proposed, like the one of \cite{wang2018quantum}  based on the qRAM model and with time complexity $\mathcal{\Tilde{O}}(\sqrt{d})$.
+Other methods using different and more convenient input models have been proposed, like the one of \cite{wang2018quantum}  based on a QRAM storing the entries of the Hamiltonian and with time complexity $\mathcal{\Tilde{O}}(\sqrt{d})$.
 
 Finally, it should be pointed out that different algorithms for QPE have been developed, some that are faster than the one presented here which is based on the IQFT. Referring to the circuit of Fig.\ref{fig:qpecirc}, the gate (time) complexity is $\mathcal{O}(m^2)$ for the IQFT plus $m$ Hadamards and calls to powers of $c-U$. If $c-U^k$ is implemented as $k$ calls to $c-U$, then the complexity is $\mathcal{O}(m^2 + 2^m)$. In this case, the complexity scales as the accuracy of the result, which is linear in $M=2^m$.
 
@@ -235,20 +244,21 @@ Indeed, the histogram depicted in Fig. \ref{fig:4x4hist2} shows that in the fina
 In order to assess the quality of our estimates, we can calculate the relative error on a low-rank reconstruction of the original matrix using this quantum eigendecomposition with respect to the one obtained using the exact eigendecomposition. Calling $\Lambda_K$ the diagonal matrix whose elements are the $K$ largest eigenvalues, and $V_K$ the matrix whose columns are the corresponding eigenvectors, we can compute the two low-rank reconstructions as $V_K\Lambda_K V_K^\top$ using both the estimated components and the classically computed ones, and calculate the Frobenius norm of their difference. Then, dividing by the norm of the exact reconstruction we obtain the relative error. For instance, by considering only the first $K=2$ principal components we got an error of approximately $0.019$.
 This quantity accounts for both the approximation error of eigenvalues and the inaccuracy of eigenstates tomography, which can be improved respectively by using larger quantum registers (for holding the eigenvalues) and more accurate tomography methods, as discussed. %remove "as discussed" if that part gets moved to later
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-    \begin{subfigure}[b]{\columnwidth}
+    \begin{subfigure}[b]{.75\textwidth}
     \includegraphics[width=\linewidth]{4x4_sim_hist1.png}
     \subcaption{}
     \label{fig:4x4hist1}
     \end{subfigure}
-    \begin{subfigure}[b]{\columnwidth}
+    \\
+    \begin{subfigure}[b]{.75\textwidth}
     \includegraphics[width=\linewidth]{4x4_sim_hist2.png}
     \subcaption{}
     \label{fig:4x4hist2}
     \end{subfigure}
     \caption{Histogram of measured eigenvalues in the first (a) and second (b) iteration for the $4\times4$ covariance matrix, executed on the simulator.}
-\end{figure}
+\end{figure*}
 
 
 The algorithm was then tested on IBM's 5-qubit quantum device Athens. For this purpose, a $2\times2$ covariance matrix  was used whose eigendecomposition is
@@ -310,8 +320,10 @@ In this case, hoping to identify anything more than the first principal componen
 \section{Conclusions}
 We analyzed the algorithm for QPCA proposed by \cite{Lloyd_2014}, which has been cited among the most relevant algorithms for quantum machine learning, reviewed its theoretical basis and critical aspects of complexity. We then proposed an implementation that resembles more the modified version of \cite{martin2019pricing}, while attempting to tackle the problem of automatizing the reconstruction of the complete eigendecomposition.\\
 Executing the circuit with different random initial states and combining the results, as was done, can be regarded as applying phase estimation to a random mixed quantum state, in consistency with its definition of mixture of pure states. It is worth noting that the same approach could not be employed for the preparation of a mixed state encoding the input matrix, since that would require decomposing such state to find appropriate pure ones, which is commonly done precisely through eigendecomposition.\\
-Testing in the simulator showed expected results, as the algorithm was able to find the principal components of the input matrices starting from different random vectors. A more precise outline of its performance on larger inputs could be achieved by more extensive testing, which however quickly becomes hardly feasible  due to the exponential complexity of simulation.\\
-On the real quantum computer, the algorithm behaves as expected for small instances, as demonstrated for a $2\times2$ matrix. In this case the iterative approach proved most effective, as noted already by \cite{martin2019pricing}. However, errors caused by quantum decoherence and noise led to unusable results already for $4\times4$ matrices, which by the way almost exhaust the computational resources of currently available quantum computers.\\
+Testing in the simulator showed expected results, as the algorithm was able to find the principal components of the input matrices starting from different random vectors. A more precise outline of its performance on larger inputs could be achieved by more extensive testing, which however quickly becomes hardly feasible  due to the exponential complexity of simulation.
+
+On the real quantum computer, the algorithm behaves as expected for small instances, as demonstrated for a $2\times2$ matrix. In this case the iterative approach proved most effective, as noted already by \cite{martin2019pricing}. However, errors caused by quantum decoherence and noise led to unusable results already for $4\times4$ matrices, which by the way almost exhaust the computational resources of currently available quantum computers.
+
 Apart from this, some issues are present with the simple solutions proposed here to fully automatize the procedure and completely remove human supervision, as was required for the testing we performed. These solutions are in general not optimal and might even hurt the performance in some cases. For instance, while merging measurements of close values that correspond to the same true eigenvalue is often necessary for the correct eigendecomposition, this operation becomes harmful when a low precision for estimation causes different true eigenvalues that were found by the algorithm to be mixed together. It is possible that with future error correcting codes these problems could be solved at their root, but currently they must be taken into account as issues that can disrupt the performance of the algorithm.
 
 %\begin{acknowledgements}
