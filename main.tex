@@ -152,6 +152,7 @@ Since in the final state of the algorithm the eigenvalues and the eigenvectors a
 
 The process of reconstructing a quantum state through measurements is called Quantum State Tomography, and is in general computationally intensive: $\mathcal{O}(4^b)$ different observables must be measured for a $b$-qubit system, and assigning a physically valid density matrix from the gathered data requires an optimization procedure, \cite{lecnotesphys}. 
 However, as \cite{Aaronson_2007} points out, in many cases one could be interested in predicting only certain properties of a quantum state without fully characterizing it, which can be done using only a polynomial number of samples.
+At any rate, the problem of efficiently "reading" quantum information encoded in amplitudes, which is common in Quantum Machine Learning applications, is still not fully resolved.
 
 Another crucial part of the algorithm is the implementation of unitary  $U=e^{iX}$, as required to perform the QPE. The problem of finding a circuit that approximates such unitary operator for a given $2^n\times2^n$ hermitian matrix $X$ has also been widely discussed in the literature under the name of Hamiltonian Simulation.
 
@@ -322,6 +323,32 @@ In this case, hoping to identify anything more than the first principal componen
 \end{figure}
 
 \section{Discussions}
+QPCA is an important tool in the field of Quantum ML, whose implementation in its original formulation however presents some difficulties.
+Until a practical QRAM model is available, procedures to prepare a state encoding the covariance matrix of a quantumly accessible dataset seem hardly feasible.
+Nevertheless, prior works have shown that the algorithm can be adapted to work with any initial state, as long as the matrix can be encoded in the unitary operators.
+\todo[color=green]{does this first part belong to introduction?}
+
+It's easy to see that in the approach followed by \cite{martin2019pricing}, after the algorithm is applied to a random initialization, subsequent iterations executed on the estimated largest eigenvector correspond to applications on a rank-one reconstruction of the original matrix, up to a scale factor.
+A natural generalization then, which we have shown here, is to consider multiple eigenvectors estimates, together with the corresponding eigenvalues, to produce a state which better approximates the original matrix, and iterate on this instead.
+While in this way we consider a higher rank reconstruction, which might seem counterproductive given that our goal is to obtain a low rank approximation, we do so in the way dictated by the original algorithm.
+Indeed, when dealing with low rank matrices, components associated to very small or zero eigenvalues will give little to no contribution to the state that gets formed.
+On the other hand, no a priori decision is forced on the number of components to retain, which is problem dependent and can otherwise undermine the generality of the method. 
+
+We have in this sense suggested an interpretation which we believe could help to highlight the connection between this iterative procedure and the theoretical basis of the algorithm, as the approximation of the state encoding the covariance matrix obtained starting from a random mixed state.
+However, this amounts to the application of phase estimation on each of the estimated eigenstates proportionally, in expectation, to their probabilities, which is how we have implemented it in Qiskit.
+This is fundamentally no different from the case in which a single eigenstate is estimated, except that if the experiment is repeated for a fixed number of times, i.e., the number of shots we execute for our algorithm, this quantity is distributed among the different eigenstates in order to obtain, with high probability, samples of the largest ones.
+
+Then, as discussed, decoding information stored in the amplitudes of a quantum state is not an easy task, and solutions to do it in a way that preserves the potential speed-up achieved by the algorithm are still being researched.
+The method that we have adopted is rather naive and could be substituted by more accurate and efficient ones, which could involve measurements in additional different directions.
+An efficient read-out protocol for this kind of application is proposed in \cite{zhang2020efficient}, and as the authors suggest it could be extended precisely to decode the eigenstates when performing QPCA. 
+In any case, this modification could be done ideally without changing the core of the algorithm, which is based on the general fact that repeated measurements of a quantum state improve the accuracy of its estimation.
+
+As we mentioned, this procedure can be thought of as a dynamic scheduling protocol for principal subspace tomography, in that we restrict our attention to the relevant components as we collect data on them.
+In principle, the initial state of the circuit could be updated  after every execution, when a measurement is taken and the estimate of an eigenstate is improved, with the corresponding eigenvalue being revealed.
+However, we also have to take into account the cost of preparing the desired states, which causes a non-negligible overhead, so that a trade-off must be balanced. 
+
+% missing comment on experiments
+
 \section{Conclusions}
 We analyzed the algorithm for QPCA proposed by \cite{Lloyd_2014}, which has been cited among the most relevant algorithms for quantum machine learning, reviewed its theoretical basis and critical aspects of complexity. We then proposed an implementation that resembles more the modified version of \cite{martin2019pricing}, while attempting to tackle the problem of automatizing the reconstruction of the complete eigendecomposition.\\
 Executing the circuit with different random initial states and combining the results, as was done, can be regarded as applying phase estimation to a random mixed quantum state, in consistency with its definition of mixture of pure states. It is worth noting that the same approach could not be employed for the preparation of a mixed state encoding the input matrix, since that would require decomposing such state to find appropriate pure ones, which is commonly done precisely through eigendecomposition.\\
