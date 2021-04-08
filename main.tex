@@ -178,7 +178,7 @@ Finally, it should be pointed out that different algorithms for QPE have been de
     };\end{tikzpicture}
     }
     \caption[.]{
-        \begin{minipage}{\linewidth}Circuit implementation of QPE.
+        \begin{minipage}{\linewidth}Circuit for QPE adopted in our implementation of the algorithm.
         \(R_k^{-1} = \begin{pmatrix} 1 & 0 \\ 0 & e^{\frac{2\pi i}{2^k}} \end{pmatrix}\)
         \end{minipage}
         }
@@ -216,7 +216,7 @@ In this sense, the procedure can be considered as a scheduling protocol for effi
 \section{Experiments}
 \label{sec:exp}
 \todo[inline]{add here everything that you have done but wasn't initially included in your report, including a few diagrams in your presentation. Results should have one subsection for simulation + one for experimental results + one section for discussing the results.}
-A demonstration that helps in visualizing how our implementation of the algorithm and the proposed protocol work is provided in the form of a Jupyter Notebook at \cite{QPCAnotebook}.
+A demonstration of how our implementation of the algorithm and the proposed protocol work is provided in the form of a Jupyter Notebook at \cite{QPCAnotebook}.
 
 We first tested the algorithm in Qiskit's QASM simulator, using a $4\times4$ synthetic covariance matrix. The matrix is represented by the eigenedecomposition
 \begin{center}
@@ -297,9 +297,6 @@ Although in this case the approximation for $\phi_2$ got slightly worse, the lar
 Lastly, we ran the algorithm on the real quantum processor, applied to the same $4\times4$ covariance matrix that was tested on the simulator.
 In this case, hoping to identify anything more than the first principal component would require that the number of precision qubits be increased to at least 3. However, in order to keep the complexity of the circuit and the decoherence effect lower, we again used 2 qubits for the eigenvalue estimation, which could ideally give us sensible results for the approximation of $\lambda_1 = 0.511$ and its eigenvector. After two iterations of the algorithm, in the same fashion of the previous experiments, we obtained the measurements shown in Fig. \ref{fig:4x4hist_real}, and an eigenvector corresponding to $\tilde{\lambda_1} = 0.5$ estimated as $\tilde{\phi_1} = (0.486, 0.520, -0.477, -0.515)$. These appear to be random results from which no useful information can be extracted, signalling that decoherence-induced errors are already too high for a problem of this size.
 
-
-%For larger instance sizes errors arise mainly due to quantum decoherence caused by the depth of the circuit. In moving from the $2\times2$ to the $4\times4$ cases we increased the precision from 2 to 3 qubits, as can be seen from the histogram; this is necessary if we hope to identify even just the first two principal components. Nevertheless, with larger input matrices the circuit complexity increases regardless of precision level, due to the \textit{transpilation} process that decomposes larger $c-U$ gates, acting on multiple target qubits, into two-qubit gates that can be physically implemented. Using for instance 2 qubits precision, while a $2\times2$ input matrix generated a circuit with 30 gates, a $4\times4$ lead to a 211 gates circuit.
-
 \begin{figure}[t]
 \centering
     \begin{subfigure}[b]{\columnwidth}
@@ -347,16 +344,13 @@ As we mentioned, this procedure can be thought of as a dynamic scheduling protoc
 In principle, the initial state of the circuit could be updated  after every execution, when a measurement is taken and the estimate of an eigenstate is improved, with the corresponding eigenvalue being revealed.
 However, we also have to take into account the cost of preparing the desired states, which causes a non-negligible overhead, so that a trade-off must be balanced. 
 
-% missing comment on experiments
+In our experiments we have shown some numerical examples of the algorithm, demonstrating how the procedure is ideally executed on the simulator.
+On the real quantum computer we were able to solve a small instance of the problem, but for a $4\times4$ matrix the generated circuit is already too large and errors caused by quantum decoherence and noise led to unusable results.
+This is clear in Fig. \ref{fig:4x4hist_real}, which shows that the output of phase estimation doesn't give any information on the true eigenspectrum of the input matrix.
+Despite using a small number of precision qubits, the depth of the circuit is largely increased in this case due to the decomposition of the larger multi-qubit controlled gates into two-qubit gates, that happens at transpilation time.
 
 \section{Conclusions}
-We analyzed the algorithm for QPCA proposed by \cite{Lloyd_2014}, which has been cited among the most relevant algorithms for quantum machine learning, reviewed its theoretical basis and critical aspects of complexity. We then proposed an implementation that resembles more the modified version of \cite{martin2019pricing}, while attempting to tackle the problem of automatizing the reconstruction of the complete eigendecomposition.\\
-Executing the circuit with different random initial states and combining the results, as was done, can be regarded as applying phase estimation to a random mixed quantum state, in consistency with its definition of mixture of pure states. It is worth noting that the same approach could not be employed for the preparation of a mixed state encoding the input matrix, since that would require decomposing such state to find appropriate pure ones, which is commonly done precisely through eigendecomposition.\\
-Testing in the simulator showed expected results, as the algorithm was able to find the principal components of the input matrices starting from different random vectors. A more precise outline of its performance on larger inputs could be achieved by more extensive testing, which however quickly becomes hardly feasible  due to the exponential complexity of simulation.
 
-On the real quantum computer, the algorithm behaves as expected for small instances, as demonstrated for a $2\times2$ matrix. In this case the iterative approach proved most effective, as noted already by \cite{martin2019pricing}. However, errors caused by quantum decoherence and noise led to unusable results already for $4\times4$ matrices, which by the way almost exhaust the computational resources of currently available quantum computers.
-
-Apart from this, some issues are present with the simple solutions proposed here to fully automatize the procedure and completely remove human supervision, as was required for the testing we performed. These solutions are in general not optimal and might even hurt the performance in some cases. For instance, while merging measurements of close values that correspond to the same true eigenvalue is often necessary for the correct eigendecomposition, this operation becomes harmful when a low precision for estimation causes different true eigenvalues that were found by the algorithm to be mixed together. It is possible that with future error correcting codes these problems could be solved at their root, but currently they must be taken into account as issues that can disrupt the performance of the algorithm.
 
 %\begin{acknowledgements}
 %If you'd like to thank anyone, place your comments here
