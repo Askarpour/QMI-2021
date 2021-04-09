@@ -64,8 +64,11 @@ grestore
 %
 \maketitle
 \begin{abstract}
-   As new milestones are reached in quantum computing and the technology advances towards maturity, an important and promising field of application is that of Quantum Machine Learning. Quantum implementation of subroutines opens up new possibilities for computational speed-up in many algorithms.
-   In this work, we first analyze one such algorithm in particular, namely Principal Component Analysis. We briefly describe the steps of the classical algorithm to understand how it can be tackled through quantum techniques, which techniques have been proposed and how they work\todo[]{techniques for traditional algorithm or quantum version?}. We then propose a Python implementation of Quantum PCA (QPCA) using Qiskit, analyze its complexity, and show its results in both the simulator and one of IBM's real quantum devices.
+   As new milestones are reached in quantum computing and the technology advances towards maturity, an important and promising field of application is that of Quantum Machine Learning.
+   Principal Component Analysis is one example of a problem that can benefit from the intrinsic strength of quantum computation at performing linear algebra.
+   Following the original proposal of a Quantum PCA (QPCA) algorithm, various efforts have been made in the literature to design a procedure applicable on small or intermediate scale quantum computers.
+   We follow this direction, and propose an implementation of the algorithm that can be executed on currently available quantum computers to reconstruct the principal subspace of a matrix.
+   We provide Qiskit code for this implementation, and show its application on both the simulator and IBM's real quantum processor.
 \end{abstract}
 
 \section{Introduction}
@@ -82,8 +85,8 @@ Here we further investigate in the direction of an iterative protocol that can i
 We consider the case in which the solution is to be decoded into classical form, and describe a method that through consecutive measurements allows to obtain the sought after state encoding the principal subspace when starting from a random mixed state.
 We provide Qiskit code for this implementation that can be executed on IBM's real quantum computers, and we test said implementation on the simulator and on a real quantum device to see how it behaves and what problems can arise in practice.
 
-The rest of this paper is structured as follows: Section~\ref{sec:rw} surveys related works; Section~\ref{sec:pre} presents preliminaries for the work; Section~\ref{sec:impl} explains ...
-\todo[inline]{complete this}
+The rest of this paper is structured as follows: Section~\ref{sec:rw} surveys related works; Section~\ref{sec:pre} presents preliminaries for the work; Section~\ref{sec:impl} explains the specific approach that was adopted and describes our implementation; Section~\ref{sec:exp} presents experiments with examples on the simulator and tests on the real quantum device; Section~\ref{sec:disc} contains discussions, further analysis of our implementation and comments on the experiments; Section~\ref{sec:conc} contains conclusions.
+
 
 
 \section{Related Works}
@@ -93,7 +96,6 @@ Since its original proposal, the topic of performing PCA using a quantum algorit
 In addition to \cite{martin2019pricing}, whose method most resembles our own, different approaches have been devised.
 
 \cite{Daskin_2016} propose a variant of the QPCA algorithm that also works in principle with random initial states, although they specifically use the equal superposition in the computational basis, and applies amplitude amplification to mark and increase the amplitude of eigenvalues lying in a pre-defined range.
-% propose a variant of the QPCA algorithm that uses as initial state the equal superposition in the computational basis, although it could in principle use any random superposition%
 In this way, a linear combination of the eigenvectors associated to the desired largest eigenvalues can be obtained, encoded in the output state.
 However as the authors explain, in order for this method to succeed, some way must be found to estimate the right number of applications of the amplitude amplification routine, as this oscillates the success probability.
 
@@ -320,6 +322,7 @@ In this case, hoping to identify anything more than the first principal componen
 \end{figure}
 
 \section{Discussions}
+\label{sec:disc}
 QPCA is an important tool in the field of Quantum ML, whose implementation in its original formulation however presents some difficulties.
 Until a practical QRAM model is available, procedures to prepare a state encoding the covariance matrix of a quantumly accessible dataset seem hardly feasible.
 Nevertheless, prior works have shown that the algorithm can be adapted to work with any initial state, as long as the matrix can be encoded in the unitary operators.
@@ -350,6 +353,12 @@ This is clear in Fig. \ref{fig:4x4hist_real}, which shows that the output of pha
 Despite using a small number of precision qubits, the depth of the circuit is largely increased in this case due to the decomposition of the larger multi-qubit controlled gates into two-qubit gates, that happens at transpilation time.
 
 \section{Conclusions}
+\label{sec:conc}
+We have discussed the original QPCA algorithm, and we have presented an implementation that is closer to a generalized version of \cite{martin2019pricing}'s modified procedure, who were, to our knowledge, the first to show practical experiments on this matter.
+
+We have provided Qiskit code for the algorithm described in this work, that was used for performing our experiments, as we believe that with the rapidly growing interest in quantum computing there is also a demand for tangible demonstrations of its applications.
+
+In discussing this algorithm we have briefly reviewed some critical issues that apply to many other problems in quantum computing and quantum ML, that need to be solved before practical real-world problems can be tackled with a quantum advantage in the NISQ era.
 
 
 %\begin{acknowledgements}
