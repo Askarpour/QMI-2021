@@ -79,11 +79,10 @@ Hence, performing eigendecomposition of the covariance matrix is enough to deter
 The most expensive steps of the algorithm are the computation of the covariance matrix and the eigendecomposition. We only address the latter, and show how to use quantum methods proposed in the literature to find eigenvalues and eigenvectors of a real-valued positive semi-definite matrix, such as a covariance matrix.
 
 \subsection*{Contributions}
-\ma{there is still some sort of mix of contributions and intro here}
-In this work we explore the possibilities of a general algorithm for QPCA that uses the currently available frameworks.
-We base on the methods proposed in previous works, surveyed in Section~\ref{sec:rw}, and in particular on the procedure of \cite{martin2019pricing}.
+In this work we explore the possibilities of a general algorithm for Quantum PCA (QPCA) that uses currently available quantum frameworks, with reference especially to Qiskit and the IBM Q devices.
+We build our approach on the methods proposed in previous works, surveyed in Section~\ref{sec:rw}, and in particular on the procedure of \cite{martin2019pricing}.
 
-We consider the case in which the solution is to be decoded into classical form, and describe a method that through consecutive measurements allows to reconstruct the principal subspace of a generic covariance matrix that could be given in different forms (depending on how the unitaries are constructed, as discussed later), when starting from a random mixed state.
+We consider the case in which the basis vectors are to be decoded into a classical description, and describe a method that through consecutive measurements allows to reconstruct the principal subspace of a generic covariance matrix that could be given in different forms (depending on how the unitaries are constructed, as discussed later), when starting from a random mixed state.
 
 We extend the approach demonstrated in \cite{martin2019pricing} to the case in which multiple dominant eigenvalues and eigenvectors are to be identified, to the point of reconstructing in principle the original matrix if it is not approximately low-rank.
 
@@ -100,18 +99,17 @@ When applied to a state encoding the covariance matrix of a dataset, this proced
 
 Following this, \cite{yu2018quantum} address the problem of completing the desired compression task by performing directly the mapping of a dataset into the low-dimensional space. 
 In their algorithm, they assume to have quantum access to the dataset stored in a QRAM and apply QPCA to produce a state encoding the low-dimensional representation of the data, so that it can then be used to implement other quantum algorithms using less resources.
-%\eli{Here you start from the larger scope of the approach and then you say that we are focusing on something else. The logical connection between the two parts of the sentence is not clear. Complete the explanation of~\cite{yu2018quantum} and then, in another paragraph, explain which gaps are left from the two presented approaches, why they are relevant and which one we tackle.}
 
-These methods represent an important preprocessing tool in the framework of Quantum ML for the long term, enabling execution of many machine learning tasks on quantum data, but currently their implementation in the original formulation presents some difficulties.
+On the long term, the methods in~\cite{Lloyd_2014} and~\cite{yu2018quantum} represent an important preprocessing tool in the framework of Quantum Machine Learning (QML) as they enable execution of many machine learning tasks on quantum data. Currently, however, their implementation in the original formulation presents some difficulties.
 In particular, until large, practical QRAM implementations are available, procedures to prepare a state encoding the covariance matrix of a quantumly accessible dataset seem hardly feasible.
-Nevertheless, subsequent works have shown that the algorithm can be adapted to work with any initial state, as long as the matrix can be encoded in the unitary operators.
+Nevertheless, subsequent works have shown that the algorithms can be adapted to work with any initial state, as long as the matrix can be encoded in the unitary operators.
 
-\cite{Daskin_2016} propose a variant of the QPCA algorithm that works in principle with random initial states, although they specifically use the equal superposition in the computational basis, and applies amplitude amplification to mark and increase the amplitude of eigenvalues lying in a pre-defined range.
+\cite{Daskin_2016} proposes a variant of the QPCA algorithm that works, in principle, with random initial states --although authors specifically use the equal superposition in the computational basis-- and applies amplitude amplification to mark and increase the amplitude of eigenvalues lying in a pre-defined range.
 In this way, a linear combination of the eigenvectors associated to the desired largest eigenvalues can be obtained, encoded in the output state.
-However as the authors explain, in order for this method to succeed, some way must be found to estimate the right number of applications of the amplitude amplification routine, as this oscillates the success probability.
+However as the authors explain, in order for this method to succeed, some way must be found to estimate the right number of applications of the amplitude amplification routine, as this determines an oscillation of the success probability.
 
 A different approach is taken by ~\cite{martin2019pricing}, which propose an iterative method that can be applied using a random state to estimate the largest principal component of a covariance matrix that is not provided in quantum form.
-Starting from an assumption that the input matrix is well approximated by a matrix with lower rank $r$ and projecting the eigenvalue component on the state corresponding to $1/r$, they first execute the circuit using a random initial state and then sequentially improve the result by repeating the procedure using the estimated largest eigenvector as new initial state. 
+Starting from an assumption that the input matrix is well approximated by a matrix with lower rank $r$ and projecting the eigenvalue component on the state corresponding to $1/r$, authors first execute the circuit using a random initial state and then sequentially improve the result by repeating the procedure using the estimated largest eigenvector as new initial state. 
 They apply this algorithm to a practical scenario in finance, and show that for small instances it is possible to reconstruct the first principal component from a set of data on a real IBM quantum processor.
 
 \section{Preliminaries}
@@ -123,13 +121,13 @@ An explanation of this well-known technique, motivated by an application in quan
 In order to apply this to a covariance matrix $X$, we consider $U=e^{iX}$. $X$ is normalized w.r.t. its trace, so that $U$ is unitary, and ${2\pi\varphi}$ is eigenvalue of $X$ corresponding to eigenvector $\ket{\psi}$.
 
 
-The quantum circuit for the QPE uses first Phase Kickback to encode $\varphi$ into an $m$ qubits register, in the form below.
+The quantum circuit for the QPE uses first Phase Kickback to encode $\varphi$ into an $m$ qubits register, in the form below, which is called \textit{phase state}.
 \begin{equation}
 \label{eqn:phasestate}
 \ket{\Phi} = \frac{1}{\sqrt{2^m}} \sum_{y=0}^{2^m-1}e^{2\pi i\varphi y}\ket{y}
 \end{equation} 
 This step requires that $e^{iX}$ be implemented as a (controlled) quantum gate; this nontrivial operation is discussed later but for now we assume it can be done efficiently.\\
-After the ``phase state" in Eq. (\ref{eqn:phasestate}) \eli{It was called Phase Kickback before, please use a consistent terminology} has been synthesized, $\varphi$ is obtained by applying the Inverse Quantum Fourier Transform (IQFT) to it and measuring \eli{what?} in the computational basis. The $m$ qubits of the original register collapse with high probability to binary values that reveal the binary fraction representation of $\varphi$. Since $\varphi$ is in general a real number, for irrational values the procedure yields an approximate answer over $m$ bits. 
+After the phase state of Eq. (\ref{eqn:phasestate}) has been synthesized, $\varphi$ is obtained by applying the Inverse Quantum Fourier Transform (IQFT) to it and then measuring the result in the computational basis. The $m$ qubits of the original register collapse with high probability to binary values that reveal the binary fraction representation of $\varphi$. Since $\varphi$ is in general a real number, for irrational values the procedure yields an approximate answer over $m$ bits. 
 \begin{equation}
 \label{eqn:binexpansion}
 \varphi \approx 0.x_{1}x_{2}...x_{m-1}x_{m}
@@ -161,16 +159,14 @@ This is a critical aspect because once the circuit is executed to produce a stat
 \end{equation}
 Since in the final state of the algorithm the eigenvalues and the eigenvectors are entangled, when a $\lambda_k$ is measured the corresponding $\ket{\phi_k}$ can be sampled; reconstructing this state corresponds to determining the vector's components.
 
-The process of reconstructing a quantum state through measurements is called Quantum State Tomography, and is in general computationally intensive: $\mathcal{O}(4^b)$ different observables must be measured for a $b$-qubit system, and assigning a physically valid density matrix from the gathered data requires an optimization procedure, \cite{lecnotesphys}. 
+The process of reconstructing a quantum state through measurements is called Quantum State Tomography, and is in general computationally intensive: $\mathcal{O}(4^b)$ different observables must be measured for a $b$-qubit system, and assigning a physically valid density matrix from the gathered data requires an optimization procedure, as discussed in  \cite{lecnotesphys}. 
 However, as \cite{Aaronson_2007} points out, in many cases one could be interested in predicting only certain properties of a quantum state without fully characterizing it, which can be done using only a polynomial number of samples.
-At any rate, the problem of efficiently "reading" quantum information encoded in amplitudes, which is common in Quantum Machine Learning applications, is still not fully resolved.
+At any rate, the problem of efficiently "reading" quantum information encoded in amplitudes, which is common in QML applications, is still not fully resolved.
 
-Another crucial part of the algorithm is the implementation of unitary  $U=e^{iX}$, as required to perform the QPE. The problem of finding a circuit that approximates such unitary operator for a given $2^n\times2^n$ hermitian matrix $X$ has also been widely discussed in the literature under the name of Hamiltonian Simulation.
+Another crucial part of the algorithm is the implementation of unitary  $U=e^{iX}$, as required to perform the QPE. The problem of finding a circuit that approximates such unitary operator for a given $2^n\times2^n$ hermitian matrix $X$ has also been widely discussed in the literature under the name of Hamiltonian Simulation \eli{Here we would need a reference}.
 
-% \todo[inline]{the two paragraphs below might make more sense if placed in the related works section.}
-
-A method for the exponentiation of non-sparse $d$-dimensional Hamiltonians in time $\mathcal{O}(\log{d})$ is also proposed in \cite{Lloyd_2014}, and compares to methods based on the higher order Suzuki-Trotter expansion that take $\mathcal{O}(d\log{d})$. However, this technique requires once again that many copies of quantum state $X$ are given, and is most effective when some of the eigenvalues of $X$ are large. It was proven that this method is optimal in terms of sample complexity \cite{Kimmel_2017}, meaning it shows the best bound on the approximation error for a given number of copies of $X$.\\
-Other methods using different and more convenient input models have been proposed, like the one of \cite{wang2018quantum}  based on a QRAM storing the entries of the Hamiltonian and with time complexity $\mathcal{\Tilde{O}}(\sqrt{d})$.
+A method for the exponentiation of non-sparse $d$-dimensional Hamiltonians in time $\mathcal{O}(\log{d})$ is also proposed in \cite{Lloyd_2014}, and is compared to methods based on the higher order Suzuki-Trotter expansion that runs in $\mathcal{O}(d\log{d})$. However, this technique requires once again that many copies of quantum state $X$ are given, and is most effective when some of the eigenvalues of $X$ are large. It was proven that this method is optimal in terms of sample complexity \cite{Kimmel_2017}, meaning it shows the best bound on the approximation error for a given number of copies of $X$.\\
+Other methods using different and more convenient input models have been proposed, like the one of \cite{wang2018quantum} based on a QRAM storing the entries of the Hamiltonian and with time complexity $\mathcal{\Tilde{O}}(\sqrt{d})$.
 
 Finally, it should be pointed out that different algorithms for QPE have been developed, some that are faster than the one presented here which is based on the IQFT. Referring to the circuit of Fig.\ref{fig:qpecirc}, the gate (time) complexity is $\mathcal{O}(m^2)$ for the IQFT plus $m$ Hadamards and calls to powers of $c-U$. If $c-U^k$ is implemented as $k$ calls to $c-U$, then the complexity is $\mathcal{O}(m^2 + 2^m)$. In this case, the complexity scales as the accuracy of the result, which is linear in $M=2^m$.
 
@@ -179,7 +175,7 @@ Finally, it should be pointed out that different algorithms for QPE have been de
     \begin{tikzpicture}
     \node[scale=0.8] {
         \begin{quantikz}[row sep=0.1cm, column sep=0.1cm]
-            \lstick{$\ket{0}$} & \gate{H} & \qw & \qw & \qw & \ctrl{5} & \qw & \gate{H} & \ctrl{1} & \qw & \ctrl{3} & \qw & \qw & \ctrl{4} & \qw & \qw & \qw & \qw & \rstick{$\ket{x_m}$}\\
+            \lstick{$\ket{0}$} \gategroup[wires=7,steps=2,style={inner xsep=-20pt, inner ysep =10pt, draw=red, xshift=-15}]{Phase Kickback}& \gate{H} & \qw & \qw & \qw & \ctrl{5} & \qw\gategroup[wires=7,steps=1,style={inner xsep=10pt,inner ysep =10pt, draw=blue,inner xsep=135pt,xshift=102}]{IQFT}& \gate{H} & \ctrl{1} & \qw & \ctrl{3} & \qw & \qw & \ctrl{4} & \qw & \qw & \qw & \qw & \rstick{$\ket{x_m}$}\\
             \lstick{$\ket{0}$} & \gate{H} & \qw & \qw & \ctrl{4} & \qw & \qw & \qw & \gate{R_2^{-1}} & \gate{H} & \qw & \ctrl{2} &\qw & \qw & \ctrl{3} & \qw & \qw & \qw & \rstick{$\ket{x_{m-1}}$}\\
             \vdots & & & & & & & & & & & & & & & & & & \vdots\\
             \lstick{$\ket{0}$}  & \gate{H} & \qw & \ctrl{2} & \qw & \qw & \qw & \qw &\qw &\qw &\gate{R_{m-1}^{-1}} &\gate{R_{m-2}^{-1}} &\gate{H} &\qw &\qw & \ctrl{1} &\qw & \qw & \rstick{$\ket{x_2}$}\\
@@ -205,7 +201,7 @@ For the realization of the $c-U$ gates instead, the complex matter of Hamiltonia
 For what regards the tomography of eigenstates, in our implementation a simple method was adopted that only measures the system in the computational Z basis, to estimate the amplitudes absolute values, and in the ``one-X basis", i.e., one qubit at a time in the X basis, to estimate the relative phases. With data gathered in these $b+1$ settings (for $b$ qubits encoding the states), $\mathcal{O}(2^b)$  square root and comparison operations are then performed to obtain an approximation of the state vector, linearly in the Hilbert space dimension.
 We are implicitly using the fact that the states will only have real amplitudes (in an ideal execution), as by the described amplitude encoding technique.
 
-In order to build the circuit, an initial state must be provided as input to the algorithm, and the original procedure of \cite{Lloyd_2014} requires, as discussed, that the input matrix itself be encoded into a quantum state for this purpose. In our case however, we assume that we that don't have access to such state, and that it's not the result of previous quantum computations. Instead, we approximate it iteratively starting from a mixture of random orthogonal pure states.
+In order to build the circuit, an initial state must be provided as input to the algorithm, and the original procedure of \cite{Lloyd_2014} requires, as discussed, that the input matrix itself be encoded into a quantum state for this purpose. In our case however, we assume that we don't have access to such state, and that it's not the result of previous quantum computations. Instead, we approximate it iteratively starting from a mixture of random orthogonal pure states.
 
 In order to do this for an $n$-dimensional matrix, we consider a random set of $n$ orthogonal vectors and the mixed state described by these vectors, each with same probability $1/n$. We can use this as initial state and expect to measure all eigenvalues and eigenvectors, but we have no guarantees that the final state will be dominated by the principal components of our matrix. Rather, we expect a uniform distribution, as each pure state of the initial uniform mixture is more likely to collapse to different eigenstates. Still, taking few samples from this final state can be enough to find rough estimates of the true eigenvalues and eigenvectors, and effectively obtain an estimate of the matrix in its eigendecomposition. A corresponding mixed state can then be prepared, using the eigenvectors estimates as pure states (generally non-orthogonal, as they have been reconstructed from measurements) weighted by the estimated eigenvalues. Applying the algorithm again using this new state now yields a final state that approximates the one in Eq. (\ref{eqn:qpcastate}), and this is indeed the case since we are using an initial state which approximates the original matrix. 
 Thus, sampling from this final state allows to more efficiently reconstruct the principal components, which is our goal for performing QPCA.
@@ -276,7 +272,6 @@ This quantity accounts for both the approximation error of eigenvalues and the i
     \caption{Histogram of measured eigenvalues in the first (a) and second (b) iteration for the $4\times4$ covariance matrix, executed on the simulator.}
 \end{figure*}
 
-\ma{talk about limitations of real q computer that allows only for small experiments and cite Francesco's paper \cite{DBLP:conf/qce/PiroAN20}}
 The algorithm was then tested on IBM's 5-qubit quantum device Athens. For this purpose, a $2\times2$ covariance matrix  was used whose eigendecomposition is
 \begin{center}
 \begin{tabular}{cl}
@@ -354,6 +349,7 @@ In our experiments we have shown some numerical examples of the algorithm, demon
 On the real quantum computer we were able to solve a small instance of the problem, but for a $4\times4$ matrix the generated circuit is already too large and errors caused by quantum decoherence and noise led to unusable results.
 This is clear in Fig. \ref{fig:4x4hist_real}, which shows that the output of phase estimation doesn't give any information on the true eigenspectrum of the input matrix.
 Despite using a small number of precision qubits, the depth of the circuit is largely increased in this case due to the decomposition of the larger multi-qubit controlled gates into two-qubit gates, that happens at transpilation time.
+In this regard, we encountered similar problems to those observed by \cite{DBLP:conf/qce/PiroAN20} when moving from the simulator to a real quantum processor.
 % (?)
 % this is due to resources limits (quantity and quality) but algo is ready in terms of framework
 
@@ -363,7 +359,7 @@ We have discussed the original QPCA algorithm, and we have presented an implemen
 
 We have provided Qiskit code for the algorithm described in this work, that was used for performing our experiments, as we believe that with the rapidly growing interest in quantum computing there is also a demand for tangible demonstrations of its applications.
 
-In discussing this algorithm we have briefly reviewed some critical issues that apply to many other problems in quantum computing and quantum ML, that need to be solved before practical real-world problems can be tackled with a quantum advantage in the NISQ era.
+In discussing this algorithm we have briefly reviewed some critical issues that apply to many other problems in quantum computing and QML, that need to be solved before practical real-world problems can be tackled with a quantum advantage in the NISQ era.
 
 
 %\begin{acknowledgements}
